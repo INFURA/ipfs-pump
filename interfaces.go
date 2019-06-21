@@ -1,6 +1,11 @@
 package pump
 
-type CID string
+import "github.com/ipfs/go-cid"
+
+type BlockInfo struct {
+	Error error
+	CID   cid.Cid
+}
 
 // An Enumerator is able to enumerate the blocks from a source
 type Enumerator interface {
@@ -9,12 +14,12 @@ type Enumerator interface {
 	TotalCount() int
 
 	// CIDs emit in the given channel each CID existing in the source
-	CIDs(out chan<- CID) error
+	CIDs(out chan<- BlockInfo) error
 }
 
 type Block struct {
 	Error error
-	CID   CID
+	CID   cid.Cid
 	Data  []byte
 }
 
@@ -22,7 +27,7 @@ type Block struct {
 type Collector interface {
 	// Blocks read each CID from the input, retrieve the corresponding
 	// block and emit it to the output
-	Blocks(in <-chan CID, out chan<- Block) error
+	Blocks(in <-chan BlockInfo, out chan<- Block) error
 }
 
 // A Drain is able to write a block to a destination

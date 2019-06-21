@@ -25,7 +25,7 @@ func (a *APIDrain) Drain(block Block) error {
 		return err
 	}
 
-	if cid != string(block.CID) {
+	if cid != block.CID.String() {
 		return fmt.Errorf("CID mismatch: expected %s, got %s", block.CID, cid)
 	}
 
