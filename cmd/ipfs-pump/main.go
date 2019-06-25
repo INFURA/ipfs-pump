@@ -15,29 +15,32 @@ import (
 
 const (
 	EnumAPIPin = "apipin"
+	EnumFlatFS = "flatfs"
 	EnumS3     = "s3"
 )
 
 const (
-	CollAPI = "api"
-	CollS3  = "s3"
+	CollAPI    = "api"
+	CollFlatFS = "flatfs"
+	CollS3     = "s3"
 )
 
 const (
-	DrainAPI = "api"
-	DrainS3  = "s3"
+	DrainAPI    = "api"
+	DrainFlatFS = "flatfs"
+	DrainS3     = "s3"
 )
 
 var (
-	enumValues = []string{EnumAPIPin, EnumS3}
+	enumValues = []string{EnumAPIPin, EnumFlatFS, EnumS3}
 	enumArg    = kingpin.Arg("enum", "The source to enumerate the content. "+
 		"Possible values are ["+strings.Join(enumValues, ",")+"].").
 		Required().Enum(enumValues...)
-	collValues = []string{CollAPI, CollS3}
+	collValues = []string{CollAPI, CollFlatFS, CollS3}
 	collArg    = kingpin.Arg("coll", "The source to get the data blocks. "+
 		"Possible values are ["+strings.Join(collValues, ",")+"].").
 		Required().Enum(collValues...)
-	drainValues = []string{DrainAPI, DrainS3}
+	drainValues = []string{DrainAPI, DrainFlatFS, DrainS3}
 	drainArg    = kingpin.Arg("drain", "The destination to copy to. "+
 		"Possible values are ["+strings.Join(drainValues, ",")+"].").
 		Required().Enum(drainValues...)
@@ -47,6 +50,9 @@ var (
 
 	enumAPIPinURL    = kingpin.Flag("enum-api-pin-url", "Enumerator "+EnumAPIPin+": API URL")
 	enumAPIPinURLVal = enumAPIPinURL.String()
+
+	enumFlatFSPath    = kingpin.Flag("enum-flatfs-path", "Enumerator "+EnumFlatFS+": Path")
+	enumFlatFSPathVal = enumFlatFSPath.String()
 
 	enumS3Region          = kingpin.Flag("enum-s3-region", "Enumerator "+EnumS3+": Region")
 	enumS3RegionVal       = enumS3Region.String()
@@ -62,6 +68,9 @@ var (
 	collAPIURL    = kingpin.Flag("coll-api-url", "Collector "+CollAPI+": API URL")
 	collAPIURLVal = collAPIURL.String()
 
+	collFlatFSPath    = kingpin.Flag("coll-flatfs-path", "Collector "+CollFlatFS+": Path")
+	collFlatFSPathVal = collFlatFSPath.String()
+
 	collS3Region          = kingpin.Flag("coll-s3-region", "Collector "+EnumS3+": Region")
 	collS3RegionVal       = collS3Region.String()
 	collS3Bucket          = kingpin.Flag("coll-s3-bucket", "Collector "+CollS3+": Bucket name")
@@ -75,6 +84,9 @@ var (
 
 	drainAPIURL    = kingpin.Flag("drain-api-url", "Drain "+DrainAPI+": API URL")
 	drainAPIURLVal = drainAPIURL.String()
+
+	drainFlatFSPath    = kingpin.Flag("drain-flatfs-path", "Drain "+DrainFlatFS+": Path")
+	drainFlatFSPathVal = drainFlatFSPath.String()
 
 	drainS3Region          = kingpin.Flag("drain-s3-region", "Drain "+EnumS3+": Region")
 	drainS3RegionVal       = drainS3Region.String()
@@ -100,6 +112,9 @@ func main() {
 	case EnumAPIPin:
 		requiredFlag(enumAPIPinURL, *enumAPIPinURLVal)
 		enumerator = pump.NewAPIPinEnumerator(*enumAPIPinURLVal)
+	case EnumFlatFS:
+		requiredFlag(enumFlatFSPath, *enumFlatFSPathVal)
+		enumerator, err = pump.NewFlatFSEnumerator(*enumFlatFSPathVal)
 	case EnumS3:
 		requiredFlag(enumS3Region, *enumS3RegionVal)
 		requiredFlag(enumS3Bucket, *enumS3BucketVal)
@@ -123,6 +138,9 @@ func main() {
 	case CollAPI:
 		requiredFlag(collAPIURL, *collAPIURLVal)
 		collector = pump.NewAPICollector(*collAPIURLVal)
+	case CollFlatFS:
+		requiredFlag(collFlatFSPath, *collFlatFSPathVal)
+		collector, err = pump.NewFlatFSCollector(*enumFlatFSPathVal)
 	case CollS3:
 		requiredFlag(collS3Region, *collS3RegionVal)
 		requiredFlag(collS3Bucket, *collS3BucketVal)
@@ -146,6 +164,9 @@ func main() {
 	case DrainAPI:
 		requiredFlag(drainAPIURL, *drainAPIURLVal)
 		drain = pump.NewAPIDrain(*drainAPIURLVal)
+	case DrainFlatFS:
+		requiredFlag(drainFlatFSPath, *drainFlatFSPathVal)
+		drain, err = pump.NewFlatFSDrain(*drainFlatFSPathVal)
 	case DrainS3:
 		requiredFlag(drainS3Region, *drainS3RegionVal)
 		requiredFlag(drainS3Bucket, *drainS3BucketVal)
