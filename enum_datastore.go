@@ -15,8 +15,12 @@ type DatastoreEnumerator struct {
 	dstore ds.Datastore
 }
 
+func NewDatastoreEnumerator(dstore ds.Datastore) *DatastoreEnumerator {
+	return &DatastoreEnumerator{dstore: dstore}
+}
+
 func (*DatastoreEnumerator) TotalCount() int {
-	panic("implement me")
+	return -1
 }
 
 func (d *DatastoreEnumerator) CIDs(out chan<- BlockInfo) error {
@@ -24,12 +28,12 @@ func (d *DatastoreEnumerator) CIDs(out chan<- BlockInfo) error {
 	q := dsq.Query{KeysOnly: true}
 	res, err := d.dstore.Query(q)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "datastore enumerator")
 	}
 
 	go func() {
 		defer func() {
-			res.Close() // ensure exit (signals early exit, too)
+			_ = res.Close() // ensure exit (signals early exit, too)
 			close(out)
 		}()
 

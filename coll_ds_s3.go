@@ -1,20 +1,15 @@
 package pump
 
 import (
-	"log"
-
 	s3ds "github.com/ipfs/go-ds-s3"
+	"github.com/pkg/errors"
 )
 
-func NewS3Collector(bucket string) *DatastoreCollector {
-	config := s3ds.Config{
-		Bucket: bucket,
-	}
-
+func NewS3Collector(config s3ds.Config) (*DatastoreCollector, error) {
 	s3, err := s3ds.NewS3Datastore(config)
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.Wrap(err, "S3 collector")
 	}
 
-	return NewDatastoreCollector(s3)
+	return NewDatastoreCollector(s3), nil
 }
