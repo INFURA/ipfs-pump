@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/pkg/errors"
+	"gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/INFURA/ipfs-pump"
 )
@@ -31,22 +31,24 @@ func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Dra
 	}
 
 	go func() {
-		count := 0
+		bar := pb.StartNew(0)
+		bar.ShowElapsedTime = true
+		bar.ShowTimeLeft = true
+		bar.ShowSpeed = true
+
 		for info := range infoIn {
-			count++
+			bar.Increment()
+			bar.SetTotal(enumerator.TotalCount())
+			bar.Prefix(info.CID.String())
+
 			if info.Error != nil {
 				log.Println(errors.Wrapf(err, "error enumerating block %s", info.CID))
 				continue
 			}
-			total := enumerator.TotalCount()
-			if total > 0 {
-				ratio := 100. * float32(count) / float32(total)
-				fmt.Printf("[%d/%d - %.2f%%] %s\n", count, total, ratio, info.CID)
-			} else {
-				fmt.Printf("[%d/%d] %s\n", count, total, info.CID)
-			}
+
 			infoOut <- info
 		}
+		bar.Finish()
 		close(infoOut)
 	}()
 
