@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"strings"
+	"sync"
 
 	s3ds "github.com/ipfs/go-ds-s3"
 	"github.com/pkg/errors"
@@ -40,6 +41,9 @@ var (
 	drainArg    = kingpin.Arg("drain", "The destination to copy to. "+
 		"Possible values are ["+strings.Join(drainValues, ",")+"].").
 		Required().Enum(drainValues...)
+
+	worker = kingpin.Flag("worker", "The number of concurrent worker to retrieve/push content").
+		Default("1").Uint()
 
 	enumAPIPinURL    = kingpin.Flag("enum-api-pin-url", "Enumerator "+EnumAPIPin+": API URL")
 	enumAPIPinURLVal = enumAPIPinURL.String()
@@ -175,21 +179,23 @@ func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Dra
 	infoOut := make(chan pump.BlockInfo)
 	blocks := make(chan pump.Block)
 
+	// Single worker for the enumerator
 	err := enumerator.CIDs(infoIn)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// relay to the collector workers
 	go func() {
-		bar := pb.StartNew(0)
-		bar.ShowElapsedTime = true
-		bar.ShowTimeLeft = true
-		bar.ShowSpeed = true
+		progress := pb.StartNew(0)
+		progress.ShowElapsedTime = true
+		progress.ShowTimeLeft = true
+		progress.ShowSpeed = true
 
 		for info := range infoIn {
-			bar.Increment()
-			bar.SetTotal(enumerator.TotalCount())
-			bar.Prefix(info.CID.String())
+			progress.Increment()
+			progress.SetTotal(enumerator.TotalCount())
+			progress.Prefix(info.CID.String())
 
 			if info.Error != nil {
 				log.Println(errors.Wrapf(err, "error enumerating block %s", info.CID.String()))
@@ -198,24 +204,59 @@ func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Dra
 
 			infoOut <- info
 		}
-		bar.Finish()
+		progress.Finish()
 		close(infoOut)
 	}()
 
-	err = collector.Blocks(infoOut, blocks)
-	if err != nil {
-		log.Fatal(err)
+	// Spawn collector workers
+	var wgCollector sync.WaitGroup
+	for i := uint(0); i < *worker; i++ {
+		wgCollector.Add(1)
+
+		go func() {
+			// each worker has its own out channel so we can detect when they are all done
+			out := make(chan pump.Block)
+
+			err = collector.Blocks(infoOut, out)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// merge the collected blocks into the single output channel
+			for block := range out {
+				blocks <- block
+			}
+
+			wgCollector.Done()
+		}()
 	}
 
-	for block := range blocks {
-		if block.Error != nil {
-			log.Println(errors.Wrapf(block.Error, "error retrieving bloc %s", block.CID.String()))
-			continue
-		}
+	// Close the blocks channel when all the collector worker are done
+	go func() {
+		wgCollector.Wait()
+		close(blocks)
+	}()
 
-		err = drain.Drain(block)
-		if err != nil {
-			log.Println(errors.Wrapf(err, "failed to push block %s", block.CID.String()))
-		}
+	// Spawn drain workers
+	var wgDrain sync.WaitGroup
+	for i := uint(0); i < *worker; i++ {
+		wgDrain.Add(1)
+
+		go func() {
+			for block := range blocks {
+				if block.Error != nil {
+					log.Println(errors.Wrapf(block.Error, "error retrieving bloc %s", block.CID.String()))
+					continue
+				}
+
+				err = drain.Drain(block)
+				if err != nil {
+					log.Println(errors.Wrapf(err, "failed to push block %s", block.CID.String()))
+				}
+			}
+			wgDrain.Done()
+		}()
 	}
+
+	wgDrain.Wait()
 }
