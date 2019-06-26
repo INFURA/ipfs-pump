@@ -6,6 +6,7 @@ It support multiple interfaces:
 - the IPFS API
 - direct access to a FlatFS datastore
 - direct access to a S3 datastore
+- a file with a list of CID
 
 # Concepts
 
@@ -17,6 +18,12 @@ A `Drain` is a destination where to push blocks.
 
 Note: even though you will likely want the `Enumerator` and the `Collector` to be the same source, they don't necessarily have to.
 
+# Install
+
+```
+go get -u github.com/INFURA/ipfs-pump/cmd/ipfs-pump
+```
+
 # Usage and examples
 
 You need to provide as arguments the three types of `Enumerator`, `Collector` and `Drain`, as well as the corresponding configuration flags.
@@ -24,7 +31,7 @@ You need to provide as arguments the three types of `Enumerator`, `Collector` an
 Copy between two live nodes using the API:
 
 ```
-go run cmd/ipfs-pump/main.go \
+ipfs-pump \
     apipin --enum-api-pin-url=127.0.0.1:5001 \
     api --coll-api-url=127.0.0.1:5001 \
     api --drain-api-url=127.0.0.1:5002 \
@@ -34,7 +41,7 @@ go run cmd/ipfs-pump/main.go \
 Copy from a FlatFS storage to a S3 storage:
 
 ```
-go run cmd/ipfs-pump/main.go \
+ipfs-pump \
     flatfs --enum-flatfs-path=~/.ipfs/blocks \
     flatfs --coll-flatfs-path=~/.ipfs/blocks \
     s3 --drain-s3-bucket=$BUCKET_NAME --drain-s3-region=$REGION \

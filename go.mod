@@ -12,6 +12,7 @@ require (
 	github.com/ipfs/go-ipfs-api v0.0.1
 	github.com/ipfs/go-ipfs-ds-help v0.0.1
 	github.com/pkg/errors v0.8.1
+	github.com/stretchr/testify v1.3.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
 )

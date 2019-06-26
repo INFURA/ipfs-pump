@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"strings"
 	"sync"
 
@@ -14,6 +15,7 @@ import (
 )
 
 const (
+	EnumFile   = "file"
 	EnumAPIPin = "apipin"
 	EnumFlatFS = "flatfs"
 	EnumS3     = "s3"
@@ -32,7 +34,7 @@ const (
 )
 
 var (
-	enumValues = []string{EnumAPIPin, EnumFlatFS, EnumS3}
+	enumValues = []string{EnumFile, EnumAPIPin, EnumFlatFS, EnumS3}
 	enumArg    = kingpin.Arg("enum", "The source to enumerate the content. "+
 		"Possible values are ["+strings.Join(enumValues, ",")+"].").
 		Required().Enum(enumValues...)
@@ -47,6 +49,9 @@ var (
 
 	worker = kingpin.Flag("worker", "The number of concurrent worker to retrieve/push content").
 		Default("1").Uint()
+
+	enumFilePath    = kingpin.Flag("enum-file-path", "Enumerator "+EnumFile+": Path")
+	enumFilePathVal = enumFilePath.String()
 
 	enumAPIPinURL    = kingpin.Flag("enum-api-pin-url", "Enumerator "+EnumAPIPin+": API URL")
 	enumAPIPinURLVal = enumAPIPinURL.String()
@@ -109,6 +114,13 @@ func main() {
 	var err error
 
 	switch *enumArg {
+	case EnumFile:
+		requiredFlag(enumFilePath, *enumFilePathVal)
+		file, err := os.Open(*enumFilePathVal)
+		if err != nil {
+			log.Fatal(err)
+		}
+		enumerator, err = pump.NewFileEnumerator(file)
 	case EnumAPIPin:
 		requiredFlag(enumAPIPinURL, *enumAPIPinURLVal)
 		enumerator = pump.NewAPIPinEnumerator(*enumAPIPinURLVal)
@@ -140,7 +152,7 @@ func main() {
 		collector = pump.NewAPICollector(*collAPIURLVal)
 	case CollFlatFS:
 		requiredFlag(collFlatFSPath, *collFlatFSPathVal)
-		collector, err = pump.NewFlatFSCollector(*enumFlatFSPathVal)
+		collector, err = pump.NewFlatFSCollector(*collFlatFSPathVal)
 	case CollS3:
 		requiredFlag(collS3Region, *collS3RegionVal)
 		requiredFlag(collS3Bucket, *collS3BucketVal)
