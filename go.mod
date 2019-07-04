@@ -11,6 +11,7 @@ require (
 	github.com/ipfs/go-ds-s3 v0.0.0-20190605225048-2db64abe1558
 	github.com/ipfs/go-ipfs-api v0.0.1
 	github.com/ipfs/go-ipfs-ds-help v0.0.1
+	github.com/multiformats/go-multihash v0.0.1
 	github.com/pkg/errors v0.8.1
 	github.com/stretchr/testify v1.3.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6

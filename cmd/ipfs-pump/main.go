@@ -198,7 +198,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	PumpIt(enumerator, collector, drain)
+	PumpIt(enumerator, collector, drain, *worker)
 }
 
 func requiredFlag(flag *kingpin.FlagClause, val string) {
@@ -207,7 +207,11 @@ func requiredFlag(flag *kingpin.FlagClause, val string) {
 	}
 }
 
-func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Drain) {
+func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Drain, worker uint) {
+	if worker == 0 {
+		log.Fatal("minimal number of worker is 1")
+	}
+
 	infoIn := make(chan pump.BlockInfo)
 	infoOut := make(chan pump.BlockInfo)
 	blocks := make(chan pump.Block)
@@ -243,7 +247,7 @@ func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Dra
 
 	// Spawn collector workers
 	var wgCollector sync.WaitGroup
-	for i := uint(0); i < *worker; i++ {
+	for i := uint(0); i < worker; i++ {
 		wgCollector.Add(1)
 
 		go func() {
@@ -272,7 +276,7 @@ func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Dra
 
 	// Spawn drain workers
 	var wgDrain sync.WaitGroup
-	for i := uint(0); i < *worker; i++ {
+	for i := uint(0); i < worker; i++ {
 		wgDrain.Add(1)
 
 		go func() {
