@@ -11,7 +11,7 @@ func TestFileEnumerator(t *testing.T) {
 	input := `QmcbQviBDZ55DxF83rTJ7fQ9PgvbpSnhRany1FXhDD11UQ
 QmcZixk3G7mmDBE7oR7MkMCeGQkzuaA5e4GS3y7szp5Tbx
 Qmb3yq1VE7keU1ckMfLr3UW71gnSuz3kGE618dn1H3VYbv
-QmZtUAkrdTjSh2GbvkkHcf8Y5dqh5qvZDW1eH2SsnXjJR3
+QmZtUAkrdTjSh2GbvkkHcf8Y5dqh5qvZDW1eH2SsnXjJR3 garbage garbage garbage
 QmSDJ8nvXh4KmpYNGFFwwKuYQRz1ZAFfUDBCRNEnmDUQNn`
 
 	reader := bytes.NewReader([]byte(input))

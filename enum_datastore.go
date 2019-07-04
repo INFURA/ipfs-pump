@@ -24,6 +24,8 @@ func (*DatastoreEnumerator) TotalCount() int {
 }
 
 func (d *DatastoreEnumerator) CIDs(out chan<- BlockInfo) error {
+	// based on https://github.com/ipfs/go-ipfs-blockstore/blob/master/blockstore.go
+
 	// KeysOnly, because that would be _a lot_ of data.
 	q := dsq.Query{KeysOnly: true}
 	res, err := d.dstore.Query(q)
