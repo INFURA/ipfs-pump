@@ -48,6 +48,6 @@ ipfs-pump \
     --worker=50
 ```
 
-# Parallel processing
+# Parallel processing
 
 Using the `--worker` flag you can enable parallel processing and greatly increase the throughput.
