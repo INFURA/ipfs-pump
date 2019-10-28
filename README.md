@@ -21,7 +21,7 @@ Note: even though you will likely want the `Enumerator` and the `Collector` to b
 ## Install
 
 ```
-go get -u github.com/INFURA/ipfs-pump/cmd/ipfs-pump
+go get -u github.com/INFURA/ipfs-pump
 ```
 
 ## Usage and examples

@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	pump "github.com/INFURA/ipfs-pump"
+	"github.com/INFURA/ipfs-pump/pump"
 )
 
 func TestPump(t *testing.T) {
