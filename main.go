@@ -11,7 +11,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/cheggaaa/pb.v1"
 
-	"github.com/INFURA/ipfs-pump"
+	"github.com/INFURA/ipfs-pump/pump"
 )
 
 const (
@@ -116,7 +116,8 @@ func main() {
 	switch *enumArg {
 	case EnumFile:
 		requiredFlag(enumFilePath, *enumFilePathVal)
-		file, err := os.Open(*enumFilePathVal)
+		var file *os.File
+		file, err = os.Open(*enumFilePathVal)
 		if err != nil {
 			log.Fatal(err)
 		}
