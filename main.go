@@ -116,7 +116,8 @@ func main() {
 	switch *enumArg {
 	case EnumFile:
 		requiredFlag(enumFilePath, *enumFilePathVal)
-		file, err := os.Open(*enumFilePathVal)
+		var file *os.File
+		file, err = os.Open(*enumFilePathVal)
 		if err != nil {
 			log.Fatal(err)
 		}
