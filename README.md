@@ -8,7 +8,7 @@ It support multiple interfaces:
 - direct access to a S3 datastore
 - a file with a list of CID
 
-# Concepts
+## Concepts
 
 An `Enumerator` is a source that will enumerate the list of existing blocks.
 
@@ -18,13 +18,13 @@ A `Drain` is a destination where to push blocks.
 
 Note: even though you will likely want the `Enumerator` and the `Collector` to be the same source, they don't necessarily have to.
 
-# Install
+## Install
 
 ```
-go get -u github.com/INFURA/ipfs-pump/cmd/ipfs-pump
+go get -u github.com/INFURA/ipfs-pump
 ```
 
-# Usage and examples
+## Usage and examples
 
 You need to provide as arguments the three types of `Enumerator`, `Collector` and `Drain`, as well as the corresponding configuration flags.
 
@@ -48,6 +48,10 @@ ipfs-pump \
     --worker=50
 ```
 
-# Parallel processing
+## Parallel processing
 
 Using the `--worker` flag you can enable parallel processing and greatly increase the throughput.
+
+## License
+
+MIT
