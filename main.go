@@ -56,8 +56,10 @@ var (
 	enumFilePath    = kingpin.Flag("enum-file-path", "Enumerator "+EnumFile+": Path")
 	enumFilePathVal = enumFilePath.String()
 
-	enumAPIPinURL    = kingpin.Flag("enum-api-pin-url", "Enumerator "+EnumAPIPin+": API URL")
-	enumAPIPinURLVal = enumAPIPinURL.String()
+	enumAPIPinURL       = kingpin.Flag("enum-api-pin-url", "Enumerator "+EnumAPIPin+": API URL")
+	enumAPIPinURLVal    = enumAPIPinURL.String()
+	enumAPIPinStream    = kingpin.Flag("enum-api-pin-stream", "Enumerator "+EnumAPIPin+": Stream")
+	enumAPIPinStreamVal = enumAPIPinStream.Bool()
 
 	enumFlatFSPath    = kingpin.Flag("enum-flatfs-path", "Enumerator "+EnumFlatFS+": Path")
 	enumFlatFSPathVal = enumFlatFSPath.String()
@@ -136,7 +138,7 @@ func main() {
 		enumerator, err = pump.NewFileEnumerator(file)
 	case EnumAPIPin:
 		requiredFlag(enumAPIPinURL, *enumAPIPinURLVal)
-		enumerator = pump.NewAPIPinEnumerator(*enumAPIPinURLVal)
+		enumerator = pump.NewAPIPinEnumerator(*enumAPIPinURLVal, *enumAPIPinStreamVal)
 	case EnumFlatFS:
 		requiredFlag(enumFlatFSPath, *enumFlatFSPathVal)
 		enumerator, err = pump.NewFlatFSEnumerator(*enumFlatFSPathVal)

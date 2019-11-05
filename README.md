@@ -33,7 +33,7 @@ Copy between two live nodes using the API:
 
 ```
 ipfs-pump \
-    apipin --enum-api-pin-url=127.0.0.1:5001 \
+    apipin --enum-api-pin-url=127.0.0.1:5001 --enum-api-pin-stream \
     api --coll-api-url=127.0.0.1:5001 \
     api --drain-api-url=127.0.0.1:5002 \
     --worker=10
