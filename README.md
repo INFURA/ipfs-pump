@@ -5,6 +5,7 @@
 It support multiple interfaces:
 - the IPFS API
 - direct access to a FlatFS datastore
+- direct access to a Badger datastore
 - direct access to a S3 datastore
 - a file with a list of CID
 
@@ -38,13 +39,13 @@ ipfs-pump \
     --worker=10
 ```
 
-Copy from a FlatFS storage to a S3 storage:
+Copy from a FlatFS storage to a Badger storage when the nodes are stopped:
 
 ```
 ipfs-pump \
     flatfs --enum-flatfs-path=~/.ipfs/blocks \
     flatfs --coll-flatfs-path=~/.ipfs/blocks \
-    s3 --drain-s3-bucket=$BUCKET_NAME --drain-s3-region=$REGION \
+    badger --drain-badger-path=~/.ipfs/badgerds \
     --worker=50
 ```
 

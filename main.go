@@ -18,31 +18,34 @@ const (
 	EnumFile   = "file"
 	EnumAPIPin = "apipin"
 	EnumFlatFS = "flatfs"
+	EnumBadger = "badger"
 	EnumS3     = "s3"
 )
 
 const (
 	CollAPI    = "api"
 	CollFlatFS = "flatfs"
+	CollBadger = "badger"
 	CollS3     = "s3"
 )
 
 const (
 	DrainAPI    = "api"
 	DrainFlatFS = "flatfs"
+	DrainBadger = "badger"
 	DrainS3     = "s3"
 )
 
 var (
-	enumValues = []string{EnumFile, EnumAPIPin, EnumFlatFS, EnumS3}
+	enumValues = []string{EnumFile, EnumAPIPin, EnumFlatFS, EnumBadger, EnumS3}
 	enumArg    = kingpin.Arg("enum", "The source to enumerate the content. "+
 		"Possible values are ["+strings.Join(enumValues, ",")+"].").
 		Required().Enum(enumValues...)
-	collValues = []string{CollAPI, CollFlatFS, CollS3}
+	collValues = []string{CollAPI, CollFlatFS, CollBadger, CollS3}
 	collArg    = kingpin.Arg("coll", "The source to get the data blocks. "+
 		"Possible values are ["+strings.Join(collValues, ",")+"].").
 		Required().Enum(collValues...)
-	drainValues = []string{DrainAPI, DrainFlatFS, DrainS3}
+	drainValues = []string{DrainAPI, DrainFlatFS, DrainBadger, DrainS3}
 	drainArg    = kingpin.Arg("drain", "The destination to copy to. "+
 		"Possible values are ["+strings.Join(drainValues, ",")+"].").
 		Required().Enum(drainValues...)
@@ -58,6 +61,9 @@ var (
 
 	enumFlatFSPath    = kingpin.Flag("enum-flatfs-path", "Enumerator "+EnumFlatFS+": Path")
 	enumFlatFSPathVal = enumFlatFSPath.String()
+
+	enumBadgerPath    = kingpin.Flag("enum-badger-path", "Enumerator "+EnumBadger+": Path")
+	enumBadgerPathVal = enumBadgerPath.String()
 
 	enumS3Region          = kingpin.Flag("enum-s3-region", "Enumerator "+EnumS3+": Region")
 	enumS3RegionVal       = enumS3Region.String()
@@ -76,6 +82,9 @@ var (
 	collFlatFSPath    = kingpin.Flag("coll-flatfs-path", "Collector "+CollFlatFS+": Path")
 	collFlatFSPathVal = collFlatFSPath.String()
 
+	collBadgerPath    = kingpin.Flag("coll-badger-path", "Collector "+CollBadger+": Path")
+	collBadgerPathVal = collBadgerPath.String()
+
 	collS3Region          = kingpin.Flag("coll-s3-region", "Collector "+EnumS3+": Region")
 	collS3RegionVal       = collS3Region.String()
 	collS3Bucket          = kingpin.Flag("coll-s3-bucket", "Collector "+CollS3+": Bucket name")
@@ -92,6 +101,9 @@ var (
 
 	drainFlatFSPath    = kingpin.Flag("drain-flatfs-path", "Drain "+DrainFlatFS+": Path")
 	drainFlatFSPathVal = drainFlatFSPath.String()
+
+	drainBadgerPath    = kingpin.Flag("drain-badger-path", "Drain "+DrainBadger+": Path")
+	drainBadgerPathVal = drainBadgerPath.String()
 
 	drainS3Region          = kingpin.Flag("drain-s3-region", "Drain "+EnumS3+": Region")
 	drainS3RegionVal       = drainS3Region.String()
@@ -128,6 +140,9 @@ func main() {
 	case EnumFlatFS:
 		requiredFlag(enumFlatFSPath, *enumFlatFSPathVal)
 		enumerator, err = pump.NewFlatFSEnumerator(*enumFlatFSPathVal)
+	case EnumBadger:
+		requiredFlag(enumBadgerPath, *enumBadgerPathVal)
+		enumerator, err = pump.NewBadgerEnumerator(*enumBadgerPathVal)
 	case EnumS3:
 		requiredFlag(enumS3Region, *enumS3RegionVal)
 		requiredFlag(enumS3Bucket, *enumS3BucketVal)
@@ -154,6 +169,9 @@ func main() {
 	case CollFlatFS:
 		requiredFlag(collFlatFSPath, *collFlatFSPathVal)
 		collector, err = pump.NewFlatFSCollector(*collFlatFSPathVal)
+	case CollBadger:
+		requiredFlag(collBadgerPath, *collBadgerPathVal)
+		collector, err = pump.NewBadgerCollector(*collBadgerPathVal)
 	case CollS3:
 		requiredFlag(collS3Region, *collS3RegionVal)
 		requiredFlag(collS3Bucket, *collS3BucketVal)
@@ -180,6 +198,9 @@ func main() {
 	case DrainFlatFS:
 		requiredFlag(drainFlatFSPath, *drainFlatFSPathVal)
 		drain, err = pump.NewFlatFSDrain(*drainFlatFSPathVal)
+	case DrainBadger:
+		requiredFlag(drainBadgerPath, *drainBadgerPathVal)
+		drain, err = pump.NewBadgerDrain(*drainBadgerPathVal)
 	case DrainS3:
 		requiredFlag(drainS3Region, *drainS3RegionVal)
 		requiredFlag(drainS3Bucket, *drainS3BucketVal)

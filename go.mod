@@ -7,6 +7,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/ipfs/go-cid v0.0.1
 	github.com/ipfs/go-datastore v0.0.5
+	github.com/ipfs/go-ds-badger v0.0.3
 	github.com/ipfs/go-ds-flatfs v0.0.2
 	github.com/ipfs/go-ds-s3 v0.0.0-20190605225048-2db64abe1558
 	github.com/ipfs/go-ipfs-api v0.0.1
