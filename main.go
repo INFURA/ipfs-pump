@@ -234,7 +234,7 @@ func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Dra
 		log.Fatal("minimal number of worker is 1")
 	}
 
-	infoIn := make(chan pump.BlockInfo)
+	infoIn := make(chan pump.BlockInfo, 500000)
 	infoOut := make(chan pump.BlockInfo)
 	blocks := make(chan pump.Block)
 
