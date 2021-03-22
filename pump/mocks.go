@@ -97,11 +97,33 @@ type MockDrain struct {
 	Drained uint32
 }
 
+type MockFailingDrain struct {
+	Drained uint32
+
+	// How many blocks we want the Drain() to simulate as failed
+	BlocksToFail uint
+}
+
 func NewMockDrain() *MockDrain {
 	return &MockDrain{}
 }
 
 func (m *MockDrain) Drain(block Block) error {
 	atomic.AddUint32(&m.Drained, 1)
+	return nil
+}
+
+func NewMockFailingDrain(blocksToFail uint) *MockFailingDrain {
+	return &MockFailingDrain{BlocksToFail: blocksToFail}
+}
+
+func (m *MockFailingDrain) Drain(block Block) error {
+	atomic.AddUint32(&m.Drained, 1)
+
+	if m.BlocksToFail > 0 {
+		m.BlocksToFail--
+		return fmt.Errorf("mocked s3 rate limit error, please slow down")
+	}
+
 	return nil
 }

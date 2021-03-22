@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
 	"sync"
 
+	"github.com/ipfs/go-cid"
 	s3ds "github.com/ipfs/go-ds-s3"
 	"github.com/pkg/errors"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -52,6 +54,8 @@ var (
 
 	worker = kingpin.Flag("worker", "The number of concurrent worker to retrieve/push content").
 		Default("1").Uint()
+
+	failedBlocksPath = kingpin.Flag("failed-blocks-path", "The path to a file where all the failed CIDs should be written").Default("").String()
 
 	enumFilePath    = kingpin.Flag("enum-file-path", "Enumerator "+EnumFile+": Path")
 	enumFilePathVal = enumFilePath.String()
@@ -222,7 +226,25 @@ func main() {
 		log.Fatal(err)
 	}
 
-	PumpIt(enumerator, collector, drain, *worker)
+	var failedBlocksWriter pump.FailedBlocksWriter
+	if *failedBlocksPath == "" {
+		failedBlocksWriter = pump.NewNullableFileEnumeratorWriter()
+	} else {
+		enumWriter, closeWriter, err := pump.NewFileEnumeratorWriter(*failedBlocksPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		failedBlocksWriter = enumWriter
+
+		defer func() {
+			err = closeWriter()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}()
+	}
+
+	PumpIt(enumerator, collector, drain, *worker, failedBlocksWriter)
 }
 
 func requiredFlag(flag *kingpin.FlagClause, val string) {
@@ -231,7 +253,7 @@ func requiredFlag(flag *kingpin.FlagClause, val string) {
 	}
 }
 
-func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Drain, worker uint) {
+func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Drain, worker uint, failedBlocksWriter pump.FailedBlocksWriter) {
 	if worker == 0 {
 		log.Fatal("minimal number of worker is 1")
 	}
@@ -239,6 +261,7 @@ func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Dra
 	infoIn := make(chan pump.BlockInfo, 500000)
 	infoOut := make(chan pump.BlockInfo)
 	blocks := make(chan pump.Block)
+	failedBlocks := make(chan cid.Cid)
 
 	// Single worker for the enumerator
 	err := enumerator.CIDs(infoIn)
@@ -306,18 +329,46 @@ func PumpIt(enumerator pump.Enumerator, collector pump.Collector, drain pump.Dra
 		go func() {
 			for block := range blocks {
 				if block.Error != nil {
-					log.Println(errors.Wrapf(block.Error, "error retrieving bloc %s", block.CID.String()))
+					log.Println(errors.Wrapf(block.Error, "error retrieving block %s", block.CID.String()))
+					failedBlocks <- block.CID
 					continue
 				}
 
 				err = drain.Drain(block)
 				if err != nil {
 					log.Println(errors.Wrapf(err, "failed to push block %s", block.CID.String()))
+					failedBlocks <- block.CID
+					continue
 				}
 			}
 			wgDrain.Done()
 		}()
 	}
 
-	wgDrain.Wait()
+	// Spawn 1 failed blocks writer worker (is enough)
+	var wgFailedBlocks sync.WaitGroup
+	wgFailedBlocks.Add(1)
+
+	go func() {
+		for failedBlock := range failedBlocks {
+			_, err = failedBlocksWriter.Write(failedBlock)
+			if err != nil {
+				log.Println(fmt.Errorf("failed to write failed block %s", failedBlock.String()))
+			}
+		}
+		wgFailedBlocks.Done()
+	}()
+
+	// Close the failed blocks channel when all the drainer worker are done
+	go func() {
+		wgDrain.Wait()
+		close(failedBlocks)
+	}()
+
+	// Wait for all the failed blocks writing and flush the remaining buffer to disk
+	wgFailedBlocks.Wait()
+	err = failedBlocksWriter.Flush()
+	if err != nil {
+		log.Println(fmt.Errorf("failed to flush writing of failed blocks. %v", err))
+	}
 }
