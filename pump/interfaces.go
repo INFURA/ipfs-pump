@@ -33,4 +33,5 @@ type Collector interface {
 // A Drain is able to write a block to a destination
 type Drain interface {
 	Drain(block Block) error
+	SuccessfulBlocksCount() uint64
 }

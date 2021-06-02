@@ -2,7 +2,6 @@ package pump
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/ipfs/go-cid"
 	shell "github.com/ipfs/go-ipfs-api"
@@ -68,14 +67,19 @@ func (a *APIPinEnumerator) directCIDs(out chan<- BlockInfo) error {
 func (a *APIPinEnumerator) streamCIDs(out chan<- BlockInfo) error {
 	s := shell.NewShell(a.URL)
 
-	pins, err := pinsStream(s)
+	pinStream, err := s.PinsStream(context.Background())
 	if err != nil {
 		return err
 	}
 
+	// Reset the total count because if we would start doing a.totalCount++ from -1,
+	// we end up with overflowing progress bar like: `QmU... 0s  10 / 9 [========]`
+	// with this adjustment we get expected: `QmU... 0s  10 / 10 [========]`
+	a.totalCount = 0
+
 	go func() {
-		for str := range pins {
-			c, err := cid.Parse(str)
+		for pinInfo := range pinStream {
+			c, err := cid.Parse(pinInfo.Cid)
 			if err != nil {
 				out <- BlockInfo{Error: err}
 				continue
@@ -88,48 +92,4 @@ func (a *APIPinEnumerator) streamCIDs(out chan<- BlockInfo) error {
 	}()
 
 	return nil
-}
-
-// Support for "pin ls --stream" is pending in go-ipfs-api
-// See https://github.com/ipfs/go-ipfs-api/pull/190
-// Support implemented here for convenience.
-
-// pinStreamInfo is the output type for pinsStream
-type pinStreamInfo struct {
-	Cid  string
-	Type string
-}
-
-// pinsStream is a streamed version of Pins. It returns a channel of the pins
-// with their type, one of DirectPin, RecursivePin, or IndirectPin.
-func pinsStream(s *shell.Shell) (<-chan pinStreamInfo, error) {
-	resp, err := s.Request("pin/ls").
-		Option("stream", true).
-		Option("offline", true).
-		Send(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Error != nil {
-		resp.Close()
-		return nil, resp.Error
-	}
-
-	out := make(chan pinStreamInfo)
-	go func() {
-		defer resp.Close()
-		var pin pinStreamInfo
-		defer close(out)
-		dec := json.NewDecoder(resp.Output)
-		for {
-			err := dec.Decode(&pin)
-			if err != nil {
-				return
-			}
-			out <- pin
-		}
-	}()
-
-	return out, nil
 }
