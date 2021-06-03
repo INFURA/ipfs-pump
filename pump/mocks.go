@@ -90,20 +90,6 @@ type mockDrain struct {
 	Drained uint64
 }
 
-type mockFailingDrain struct {
-	Drained uint64
-
-	// How many blocks we want the Drain() to simulate as failed
-	BlocksToFail uint64
-}
-
-// mockCidPrefDrain has a Drain() function that verifies the CID coming from Enumerator is correctly deconstructed.
-type mockCidPrefDrain struct {
-	Drained uint64
-
-	expCidPref cid.Prefix
-}
-
 func newMockDrain() *mockDrain {
 	return &mockDrain{}
 }
@@ -115,6 +101,13 @@ func (m *mockDrain) Drain(block Block) error {
 
 func (m *mockDrain) SuccessfulBlocksCount() uint64 {
 	return m.Drained
+}
+
+type mockFailingDrain struct {
+	Drained uint64
+
+	// How many blocks we want the Drain() to simulate as failed
+	BlocksToFail uint64
 }
 
 func newMockFailingDrain(blocksToFail uint64) *mockFailingDrain {
@@ -134,6 +127,13 @@ func (m *mockFailingDrain) Drain(block Block) error {
 
 func (m *mockFailingDrain) SuccessfulBlocksCount() uint64 {
 	return m.Drained
+}
+
+// mockCidPrefDrain has a Drain() function that verifies the CID coming from Enumerator is correctly deconstructed.
+type mockCidPrefDrain struct {
+	Drained uint64
+
+	expCidPref cid.Prefix
 }
 
 func newMockCidPrefDrain(expCidPref cid.Prefix) *mockCidPrefDrain {
