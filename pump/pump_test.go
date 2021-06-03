@@ -48,11 +48,12 @@ func testPump(t *testing.T, drain Drain, count int, failedCount uint, worker uin
 
 	enum := newMockEnumerator(&blocks, count, enumCidPref)
 	coll := NewMockCollector(&blocks)
+	pbw := NewProgressWriter()
 
 	failedBlocksWriter, closeWriter, err := NewFileEnumeratorWriter(tmpFailedBlocksFile)
 	require.NoError(t, err)
 
-	PumpIt(enum, coll, drain, worker, failedBlocksWriter)
+	PumpIt(enum, coll, drain, failedBlocksWriter, pbw, worker)
 
 	mockedDrain, ok := drain.(*mockDrain)
 	if ok {
@@ -81,7 +82,7 @@ func testPump(t *testing.T, drain Drain, count int, failedCount uint, worker uin
 
 		// But swipe the failing mocked drain with a successful one
 		drain = newMockDrain()
-		PumpIt(enum, coll, drain, worker, NewNullableFileEnumeratorWriter())
+		PumpIt(enum, coll, drain, NewNullableFileEnumeratorWriter(), pbw, worker)
 
 		mockedDrain, ok := drain.(*mockDrain)
 		if ok {

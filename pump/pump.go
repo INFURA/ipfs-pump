@@ -7,10 +7,9 @@ import (
 
 	"github.com/ipfs/go-cid"
 	"github.com/pkg/errors"
-	"gopkg.in/cheggaaa/pb.v1"
 )
 
-func PumpIt(enumerator Enumerator, collector Collector, drain Drain, worker uint, failedBlocksWriter FailedBlocksWriter) {
+func PumpIt(enumerator Enumerator, collector Collector, drain Drain, failedBlocksWriter FailedBlocksWriter, progressWriter ProgressWriter, worker uint) {
 	if worker == 0 {
 		log.Fatal("minimal number of worker is 1")
 	}
@@ -28,24 +27,19 @@ func PumpIt(enumerator Enumerator, collector Collector, drain Drain, worker uint
 
 	// relay to the collector workers
 	go func() {
-		progress := pb.StartNew(0)
-		progress.ShowElapsedTime = true
-		progress.ShowTimeLeft = true
-		progress.ShowSpeed = true
-
 		for info := range infoIn {
-			progress.Increment()
-			progress.SetTotal(enumerator.TotalCount())
+			progressWriter.Increment()
+			progressWriter.SetTotal(enumerator.TotalCount())
 
 			if info.Error != nil {
 				log.Println(errors.Wrapf(info.Error, "error enumerating block"))
 				continue
 			}
 
-			progress.Prefix(info.CID.String())
+			progressWriter.Prefix(info.CID.String())
 			infoOut <- info
 		}
-		progress.Finish()
+		progressWriter.Finish()
 		close(infoOut)
 	}()
 

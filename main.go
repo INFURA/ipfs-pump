@@ -220,6 +220,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	progressWriter := pump.NewProgressWriter()
+
 	var failedBlocksWriter pump.FailedBlocksWriter
 	if *failedBlocksPath == "" {
 		failedBlocksWriter = pump.NewNullableFileEnumeratorWriter()
@@ -238,7 +240,7 @@ func main() {
 		}()
 	}
 
-	pump.PumpIt(enumerator, collector, drain, *worker, failedBlocksWriter)
+	pump.PumpIt(enumerator, collector, drain, failedBlocksWriter, progressWriter, *worker)
 }
 
 func requiredFlag(flag *kingpin.FlagClause, val string) {
