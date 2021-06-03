@@ -2,7 +2,6 @@ package pump
 
 import (
 	"fmt"
-	"sync/atomic"
 
 	cid "github.com/ipfs/go-cid"
 	shell "github.com/ipfs/go-ipfs-api"
@@ -12,21 +11,18 @@ import (
 var _ Drain = &APIDrain{}
 
 type APIDrain struct {
-	s                *shell.Shell
-	successfulBlocks uint64
+	s *shell.Shell
 }
 
 func NewAPIDrain(URL string) *APIDrain {
 	return &APIDrain{
-		s:                shell.NewShell(URL),
-		successfulBlocks: 0,
+		s: shell.NewShell(URL),
 	}
 }
 
 func NewAPIDrainWithShell(shell *shell.Shell) *APIDrain {
 	return &APIDrain{
-		s:                shell,
-		successfulBlocks: 0,
+		s: shell,
 	}
 }
 
@@ -57,11 +53,5 @@ func (a *APIDrain) Drain(block Block) error {
 		return fmt.Errorf("CID MhLength mismatch between expected '%s', got '%s'", block.CID, blockPutCidRaw)
 	}
 
-	atomic.AddUint64(&a.successfulBlocks, 1)
-
 	return nil
-}
-
-func (a *APIDrain) SuccessfulBlocksCount() uint64 {
-	return a.successfulBlocks
 }

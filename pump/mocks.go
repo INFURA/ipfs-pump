@@ -99,10 +99,6 @@ func (m *mockDrain) Drain(block Block) error {
 	return nil
 }
 
-func (m *mockDrain) SuccessfulBlocksCount() uint64 {
-	return m.Drained
-}
-
 type mockFailingDrain struct {
 	Drained uint64
 
@@ -123,10 +119,6 @@ func (m *mockFailingDrain) Drain(block Block) error {
 	}
 
 	return nil
-}
-
-func (m *mockFailingDrain) SuccessfulBlocksCount() uint64 {
-	return m.Drained
 }
 
 // mockCidPrefDrain has a Drain() function that verifies the CID coming from Enumerator is correctly deconstructed.
@@ -158,8 +150,4 @@ func (m *mockCidPrefDrain) Drain(block Block) error {
 	}
 
 	return nil
-}
-
-func (m *mockCidPrefDrain) SuccessfulBlocksCount() uint64 {
-	return m.Drained
 }

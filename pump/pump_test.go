@@ -29,7 +29,7 @@ func TestPump(t *testing.T) {
 	testPump(t, newMockDrain(), 500, 0, 10, v0ProtobufSha256CidPref)
 
 	// Tests the collection + logging of failed CIDs
-	testPump(t, newMockFailingDrain(5), 10, 5, 1, v0ProtobufSha256CidPref)
+	testPump(t, NewCountedDrain(newMockFailingDrain(5)), 10, 5, 1, v0ProtobufSha256CidPref)
 	testPump(t, newMockFailingDrain(50), 100, 50, 50, v0ProtobufSha256CidPref)
 	testPump(t, newMockFailingDrain(50), 50, 50, 100, v0ProtobufSha256CidPref)
 	testPump(t, newMockFailingDrain(500), 5000, 500, 100, v0ProtobufSha256CidPref)
@@ -48,7 +48,8 @@ func testPump(t *testing.T, drain Drain, count int, failedCount uint, worker uin
 
 	enum := newMockEnumerator(&blocks, count, enumCidPref)
 	coll := NewMockCollector(&blocks)
-	pbw := NewProgressWriter()
+
+	pbw := NewNullProgressWriter()
 
 	failedBlocksWriter, closeWriter, err := NewFileEnumeratorWriter(tmpFailedBlocksFile)
 	require.NoError(t, err)
@@ -67,6 +68,12 @@ func testPump(t *testing.T, drain Drain, count int, failedCount uint, worker uin
 		assert.Equal(t, failedCount, failedBlocksWriter.Count())
 	}
 
+	counterDrain, ok := drain.(*CounterDrain)
+	if ok {
+		// Assert the CounterDrain doesn't count failed blocks as successful
+		assert.Equal(t, counterDrain.SuccessfulBlocksCount(), uint64(count-int(failedCount)))
+	}
+
 	err = closeWriter()
 	require.NoError(t, err)
 
@@ -81,13 +88,10 @@ func testPump(t *testing.T, drain Drain, count int, failedCount uint, worker uin
 		require.NoError(t, err)
 
 		// But swipe the failing mocked drain with a successful one
-		drain = newMockDrain()
-		PumpIt(enum, coll, drain, NewNullableFileEnumeratorWriter(), pbw, worker)
+		successMockedDrain := newMockDrain()
+		PumpIt(enum, coll, successMockedDrain, NewNullableFileEnumeratorWriter(), pbw, worker)
 
-		mockedDrain, ok := drain.(*mockDrain)
-		if ok {
-			// Assert all the previously collected failed blocks were successfully pushed now
-			assert.Equal(t, uint64(failedCount), mockedDrain.Drained)
-		}
+		// Assert all blocks are successfully pushed
+		assert.Equal(t, uint64(failedCount), successMockedDrain.Drained)
 	}
 }

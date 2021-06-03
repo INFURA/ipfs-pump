@@ -39,3 +39,25 @@ func (p *ProgressBarWriter) Prefix(elem string) {
 func (p *ProgressBarWriter) Finish() {
 	p.pb.Finish()
 }
+
+type NullProgressWriter struct {
+}
+
+var _ ProgressWriter = (*NullProgressWriter)(nil)
+
+func NewNullProgressWriter() *NullProgressWriter {
+	return &NullProgressWriter{}
+}
+
+func (p *NullProgressWriter) Increment() int {
+	return 0
+}
+
+func (p *NullProgressWriter) SetTotal(total int) {
+}
+
+func (p *NullProgressWriter) Prefix(elem string) {
+}
+
+func (p *NullProgressWriter) Finish() {
+}
