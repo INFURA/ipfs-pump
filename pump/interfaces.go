@@ -34,3 +34,8 @@ type Collector interface {
 type Drain interface {
 	Drain(block Block) error
 }
+
+type CountedDrain interface {
+	Drain
+	SuccessfulBlocksCount() uint64
+}

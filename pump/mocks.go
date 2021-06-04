@@ -7,21 +7,21 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ipfs/go-cid"
-	"github.com/multiformats/go-multihash"
+	cid "github.com/ipfs/go-cid"
 )
 
 var _ Enumerator = &MockEnumerator{}
 var _ Collector = &MockCollector{}
-var _ Drain = &MockDrain{}
+var _ Drain = &mockDrain{}
 
 type MockEnumerator struct {
-	blocks *sync.Map
-	count  int
+	blocks  *sync.Map
+	count   int
+	cidPref cid.Prefix
 }
 
-func NewMockEnumerator(blocks *sync.Map, count int) *MockEnumerator {
-	return &MockEnumerator{blocks: blocks, count: count}
+func newMockEnumerator(blocks *sync.Map, count int, cidPref cid.Prefix) *MockEnumerator {
+	return &MockEnumerator{blocks: blocks, count: count, cidPref: cidPref}
 }
 
 func (m *MockEnumerator) TotalCount() int {
@@ -30,13 +30,6 @@ func (m *MockEnumerator) TotalCount() int {
 
 func (m *MockEnumerator) CIDs(out chan<- BlockInfo) error {
 	i := m.count
-
-	pref := cid.Prefix{
-		Version:  1,
-		Codec:    cid.Raw,
-		MhType:   multihash.SHA2_256,
-		MhLength: -1,
-	}
 
 	go func() {
 		defer close(out)
@@ -49,7 +42,7 @@ func (m *MockEnumerator) CIDs(out chan<- BlockInfo) error {
 				log.Fatal(err)
 			}
 
-			c, err := pref.Sum(data)
+			c, err := m.cidPref.Sum(data)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -93,36 +86,67 @@ func (m *MockCollector) Blocks(in <-chan BlockInfo, out chan<- Block) error {
 	return nil
 }
 
-type MockDrain struct {
-	Drained uint32
+type mockDrain struct {
+	Drained uint64
 }
 
-type MockFailingDrain struct {
-	Drained uint32
-
-	// How many blocks we want the Drain() to simulate as failed
-	BlocksToFail uint
+func newMockDrain() *mockDrain {
+	return &mockDrain{}
 }
 
-func NewMockDrain() *MockDrain {
-	return &MockDrain{}
-}
-
-func (m *MockDrain) Drain(block Block) error {
-	atomic.AddUint32(&m.Drained, 1)
+func (m *mockDrain) Drain(block Block) error {
+	atomic.AddUint64(&m.Drained, 1)
 	return nil
 }
 
-func NewMockFailingDrain(blocksToFail uint) *MockFailingDrain {
-	return &MockFailingDrain{BlocksToFail: blocksToFail}
+type mockFailingDrain struct {
+	Drained uint64
+
+	// How many blocks we want the Drain() to simulate as failed
+	BlocksToFail uint64
 }
 
-func (m *MockFailingDrain) Drain(block Block) error {
-	atomic.AddUint32(&m.Drained, 1)
+func newMockFailingDrain(blocksToFail uint64) *mockFailingDrain {
+	return &mockFailingDrain{BlocksToFail: blocksToFail}
+}
+
+func (m *mockFailingDrain) Drain(block Block) error {
+	atomic.AddUint64(&m.Drained, 1)
 
 	if m.BlocksToFail > 0 {
 		m.BlocksToFail--
 		return fmt.Errorf("mocked s3 rate limit error, please slow down")
+	}
+
+	return nil
+}
+
+// mockCidPrefDrain has a Drain() function that verifies the CID coming from Enumerator is correctly deconstructed.
+type mockCidPrefDrain struct {
+	Drained uint64
+
+	expCidPref cid.Prefix
+}
+
+func newMockCidPrefDrain(expCidPref cid.Prefix) *mockCidPrefDrain {
+	return &mockCidPrefDrain{expCidPref: expCidPref}
+}
+
+func (m *mockCidPrefDrain) Drain(block Block) error {
+	atomic.AddUint64(&m.Drained, 1)
+
+	cidPref := block.CID.Prefix()
+
+	if cidPref.Codec != m.expCidPref.Codec {
+		return fmt.Errorf("expected codec %v, got %v", m.expCidPref.Codec, cidPref.Codec)
+	}
+
+	if cidPref.MhType != m.expCidPref.MhType {
+		return fmt.Errorf("expected MH type %v, got %v", m.expCidPref.MhType, cidPref.MhType)
+	}
+
+	if cidPref.MhLength != m.expCidPref.MhLength {
+		return fmt.Errorf("expected MH length %v, got %v", m.expCidPref.MhLength, cidPref.MhLength)
 	}
 
 	return nil
