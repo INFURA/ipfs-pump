@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/INFURA/ipfs-pump/pump"
+	"github.com/INFURA/ipfs-pump.v2/pump"
 	s3ds "github.com/ipfs/go-ds-s3"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
