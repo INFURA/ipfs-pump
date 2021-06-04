@@ -72,9 +72,8 @@ func (a *APIPinEnumerator) streamCIDs(out chan<- BlockInfo) error {
 		return err
 	}
 
-	// Reset the total count because if we would start doing a.totalCount++ from -1,
-	// we end up with overflowing progress bar like: `QmU... 0s  10 / 9 [========]`
-	// with this adjustment we get expected: `QmU... 0s  10 / 10 [========]`
+	// Now that we started the query we can properly count, which means we need to
+	// reset the counter to zero instead of -1 (meaning unknown).
 	a.totalCount = 0
 
 	go func() {
